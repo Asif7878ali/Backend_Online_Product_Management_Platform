@@ -10,19 +10,36 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
-            // Pagination (8 per page)
-            $products = Product::paginate(8);
+            $query = Product::with('category');
+
+            // SEARCH (title / description)
+            if ($request->filled('search')) {
+                $search = $request->search;
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'LIKE', "%{$search}%")
+                        ->orWhere('description', 'LIKE', "%{$search}%");
+                });
+            }
+
+            // FILTER (category name)
+            if ($request->filled('filter') && $request->filter !== 'All') {
+                $filter = $request->filter;
+
+                $query->whereHas('category', function ($q) use ($filter) {
+                    $q->where('name', $filter);
+                });
+            }
+
+            // PAGINATION (dynamic per page optional)
+            $perPage = $request->get('per_page', 8);
+
+            $products = $query->paginate($perPage);
 
             return response()->json([
                 'status' => true,
-
-                //product data
                 'data' => $products->items(),
-
-                //Total pages
                 'totalPages' => $products->lastPage(),
-
-                //Total items in DB
                 'totalItems' => $products->total(),
             ], 200);
         } catch (\Exception $e) {
