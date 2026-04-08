@@ -66,4 +66,41 @@ class AuthController extends Controller
             'user' => $user
         ], 200);
     }
+
+    public function logout(Request $req)
+    {
+        try {
+            $user = $req->user();
+
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            $token = $user->currentAccessToken();
+
+            if (!$token) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not found'
+                ], 401);
+            }
+
+            $token->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Logout successfully'
+            ], 200);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
