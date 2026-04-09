@@ -11,7 +11,8 @@ use Illuminate\Validation\ValidationException;
 class ProductController extends Controller
 {
     // GET PRODUCTS
-    public function index(Request $request) {
+    public function index(Request $request)
+    {
         try {
             $query = Product::with('category');
 
@@ -21,7 +22,7 @@ class ProductController extends Controller
 
                 $query->where(function ($q) use ($search) {
                     $q->where('title', 'LIKE', "%{$search}%")
-                      ->orWhere('description', 'LIKE', "%{$search}%");
+                        ->orWhere('description', 'LIKE', "%{$search}%");
                 });
             }
 
@@ -63,12 +64,14 @@ class ProductController extends Controller
     }
 
     // HELPER: GET CATEGORY ID
-    private function getCategoryId($categoryName) {
+    private function getCategoryId($categoryName)
+    {
         return Category::where('name', $categoryName)->value('id');
     }
 
     // CREATE PRODUCT
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         try {
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
@@ -128,7 +131,8 @@ class ProductController extends Controller
     }
 
     // UPDATE PRODUCT
-       public function update(Request $request, $id) {
+    public function update(Request $request, $id)
+    {
         try {
             $product = Product::find($id);
 
@@ -208,7 +212,8 @@ class ProductController extends Controller
     }
 
     // DELETE PRODUCT
-    public function destroy($id) {
+    public function destroy($id)
+    {
         try {
             $product = Product::find($id);
 
