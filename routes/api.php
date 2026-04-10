@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 
 // User Register Api
@@ -21,3 +22,6 @@ Route::middleware('auth:sanctum')->post('/create/product', [ProductController::c
 Route::middleware('auth:sanctum')->post('/update/product/{id}', [ProductController::class, 'update']);
 // Delete Products Api
 Route::middleware('auth:sanctum')->delete('/delete/product/{id}', [ProductController::class, 'destroy']);
+
+//Order Api
+Route::middleware('auth:sanctum')->post('/place/order', [OrderController::class, 'store']);

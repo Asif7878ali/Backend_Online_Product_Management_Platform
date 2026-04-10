@@ -33,11 +33,16 @@ class Product extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
     // Full image URL
     public function getImageUrlAttribute()
     {
-        return $this->image 
-            ? asset('storage/' . $this->image) 
+        return $this->image
+            ? asset('storage/' . $this->image)
             : null;
     }
 
