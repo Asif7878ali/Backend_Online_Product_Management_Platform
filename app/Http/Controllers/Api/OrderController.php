@@ -61,7 +61,6 @@ class OrderController extends Controller
                 'message' => 'Order placed successfully',
                 'data' => $order
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -70,6 +69,58 @@ class OrderController extends Controller
                 'message' => 'Something went wrong',
                 'error' => $e->getMessage()
             ]);
+        }
+    }
+
+    public function index(Request $request)
+    {
+        try {
+            $vendorId = auth()->id();
+
+            $query = Order::with(['product', 'user']); // user = customer
+
+            // Only vendor products
+            $query->whereHas('product', function ($q) use ($vendorId) {
+                $q->where('user_id', $vendorId);
+            });
+
+            // SEARCH 
+            if ($request->filled('search')) {
+                $search = $request->search;
+
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('product', function ($p) use ($search) {
+                        $p->where('title', 'LIKE', "%{$search}%");
+                    });
+                });
+            }
+
+            // PAGINATION
+            $perPage = $request->get('per_page', 8);
+            $orders = $query->latest()->paginate($perPage);
+
+            // IMAGE URL
+            $orders->getCollection()->transform(function ($order) {
+                if ($order->product && $order->product->image) {
+                    $order->product->image_url = asset('storage/' . $order->product->image);
+                } else {
+                    $order->product->image_url = null;
+                }
+                return $order;
+            });
+
+            return response()->json([
+                'status' => true,
+                'data' => $orders->items(),
+                'totalPages' => $orders->lastPage(),
+                'totalItems' => $orders->total(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }

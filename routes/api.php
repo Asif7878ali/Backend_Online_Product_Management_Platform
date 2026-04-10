@@ -25,3 +25,4 @@ Route::middleware('auth:sanctum')->delete('/delete/product/{id}', [ProductContro
 
 //Order Api
 Route::middleware('auth:sanctum')->post('/place/order', [OrderController::class, 'store']);
+Route::middleware('auth:sanctum')->get('/get/orders', [OrderController::class, 'index']);
