@@ -9,12 +9,34 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-
-    public function index()
+    // GET USERS
+    public function index(Request $request)
     {
         try {
-            $users = User::where('role', '!=', 'admin')
-                ->paginate(10);
+
+            $query = User::query();
+
+            // EXCLUDE ADMIN
+            $query->where('role', '!=', 'admin');
+
+            // SEARCH
+            if ($request->filled('search')) {
+                $search = $request->search;
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%");
+                });
+            }
+
+            // ROLE FILTER
+            if ($request->filled('filter') && $request->filter !== 'All') {
+                $query->where('role', $request->filter);
+            }
+
+            // PAGINATION
+            $perPage = $request->get('per_page', 10);
+            $users = $query->paginate($perPage);
 
             return response()->json([
                 'status' => true,
@@ -31,6 +53,7 @@ class AuthController extends Controller
         }
     }
 
+    // CREATE USERS
     public function register(Request $req)
     {
         try {
@@ -72,6 +95,7 @@ class AuthController extends Controller
         }
     }
 
+    // LOGIN
     public function login(Request $req)
     {
         $req->validate([
@@ -99,6 +123,7 @@ class AuthController extends Controller
         ], 200);
     }
 
+    // LOGOUT
     public function logout(Request $req)
     {
         $req->user()->currentAccessToken()->delete();
