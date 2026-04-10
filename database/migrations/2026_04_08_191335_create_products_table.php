@@ -6,24 +6,38 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('category_id')
-              ->nullable()
-              ->constrained()
-              ->nullOnDelete();
-        $table->string('title');
-        $table->text('description')->nullable();
-        $table->decimal('price', 10, 2);
-        $table->integer('stock')->default(0);
-        $table->string('image')->nullable();
-        $table->timestamps();
-    });
+            $table->id();
+
+            // basic info
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->decimal('price', 10, 2);
+
+            // Image
+            $table->string('image')->nullable();
+
+            // Category
+            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+
+            // Inventory Management
+            $table->integer('stock')->default(0);        // current stock
+            $table->integer('threshold')->default(5);    // low stock alert
+            $table->integer('reserved_stock')->default(0); // future use (cart)
+
+            // Vendor (who added product)
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+
+            // timestamp
+            $table->timestamps();
+
+            // indexes
+            $table->index('user_id');
+            $table->index('category_id');
+            $table->index('stock');
+        });
     }
 
     /**

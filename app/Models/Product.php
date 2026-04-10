@@ -11,20 +11,29 @@ class Product extends Model
 
     protected $fillable = [
         'category_id',
+        'user_id',
         'title',
         'description',
         'price',
         'stock',
+        'threshold',
+        'reserved_stock',
         'image'
     ];
 
-    //  Product belongs to Category
+    // Product belongs to Category
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-    // Optional: Accessor (full image URL)
+    // Product belongs to Vendor (User)
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Full image URL
     public function getImageUrlAttribute()
     {
         return $this->image 
@@ -32,9 +41,21 @@ class Product extends Model
             : null;
     }
 
-    // Optional: Scope (only available products)
+    // Available stock (real stock)
+    public function getAvailableStockAttribute()
+    {
+        return $this->stock - $this->reserved_stock;
+    }
+
+    // Scope: only available products
     public function scopeAvailable($query)
     {
-        return $query->where('stock', '>', 0);
+        return $query->whereRaw('stock - reserved_stock > 0');
+    }
+
+    // Check low stock
+    public function isLowStock()
+    {
+        return $this->stock <= $this->threshold;
     }
 }

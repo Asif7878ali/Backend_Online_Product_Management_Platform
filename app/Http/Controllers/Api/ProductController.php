@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
-use App\Models\Category;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -14,7 +15,19 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
+            
+            $user = auth()->user();
+
             $query = Product::with('category');
+
+            // ROLE BASED FILTER
+            if ($user->isVendor()) {
+                $query->where('user_id', $user->id);
+            }
+
+            if ($user->isCustomer()) {
+                $query->where('stock', '>', 0);
+            }
 
             // SEARCH
             if ($request->filled('search')) {
@@ -22,11 +35,11 @@ class ProductController extends Controller
 
                 $query->where(function ($q) use ($search) {
                     $q->where('title', 'LIKE', "%{$search}%")
-                        ->orWhere('description', 'LIKE', "%{$search}%");
+                      ->orWhere('description', 'LIKE', "%{$search}%");
                 });
             }
 
-            // FILTER
+            // CATEGORY FILTER
             if ($request->filled('filter') && $request->filter !== 'All') {
                 $filter = $request->filter;
 
@@ -39,7 +52,7 @@ class ProductController extends Controller
             $perPage = $request->get('per_page', 8);
             $products = $query->paginate($perPage);
 
-            // Transform collection (add image_url)
+            //  IMAGE URL
             $products->getCollection()->transform(function ($product) {
                 $product->image_url = $product->image
                     ? asset('storage/' . $product->image)
@@ -73,6 +86,8 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = auth()->user();
+
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'required|string',
@@ -82,7 +97,7 @@ class ProductController extends Controller
                 'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
-            // Category check
+            // CATEGORY CHECK
             $categoryId = $this->getCategoryId($validated['category']);
 
             if (!$categoryId) {
@@ -92,11 +107,12 @@ class ProductController extends Controller
                 ], 400);
             }
 
-            // Upload image
+            //  IMAGE UPLOAD
             $imagePath = $request->file('image')->store('products', 'public');
 
-            // Create product
+            //  CREATE PRODUCT WITH USER ID
             $product = Product::create([
+                'user_id' => $user->id,
                 'title' => $validated['title'],
                 'description' => $validated['description'],
                 'price' => $validated['price'],
@@ -105,7 +121,6 @@ class ProductController extends Controller
                 'image' => $imagePath,
             ]);
 
-            // Image URL
             $product->image_url = asset('storage/' . $product->image);
 
             return response()->json([
@@ -134,6 +149,8 @@ class ProductController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $user = auth()->user();
+
             $product = Product::find($id);
 
             if (!$product) {
@@ -141,6 +158,14 @@ class ProductController extends Controller
                     'status' => false,
                     'message' => 'Product not found'
                 ], 404);
+            }
+
+            //  AUTHORIZATION CHECK
+            if ($user->isVendor() && $product->user_id !== $user->id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized action'
+                ], 403);
             }
 
             $validated = $request->validate([
@@ -152,7 +177,7 @@ class ProductController extends Controller
                 'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
-            // Category check
+            // CATEGORY CHECK
             $categoryId = $this->getCategoryId($validated['category']);
 
             if (!$categoryId) {
@@ -162,20 +187,18 @@ class ProductController extends Controller
                 ], 400);
             }
 
-            // Image update
+            // IMAGE UPDATE
             if ($request->hasFile('image')) {
 
-                // Delete old image
                 if ($product->image && Storage::disk('public')->exists($product->image)) {
                     Storage::disk('public')->delete($product->image);
                 }
 
-                // Upload new image
                 $imagePath = $request->file('image')->store('products', 'public');
                 $product->image = $imagePath;
             }
 
-            // Update fields
+            // UPDATE
             $product->update([
                 'title' => $validated['title'],
                 'description' => $validated['description'],
@@ -184,7 +207,6 @@ class ProductController extends Controller
                 'category_id' => $categoryId,
             ]);
 
-            // Image URL
             $product->image_url = $product->image
                 ? asset('storage/' . $product->image)
                 : null;
@@ -215,6 +237,8 @@ class ProductController extends Controller
     public function destroy($id)
     {
         try {
+            $user = auth()->user();
+
             $product = Product::find($id);
 
             if (!$product) {
@@ -224,12 +248,20 @@ class ProductController extends Controller
                 ], 404);
             }
 
-            // Delete image
+            // AUTHORIZATION CHECK
+            if ($user->isVendor() && $product->user_id !== $user->id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized action'
+                ], 403);
+            }
+
+            // DELETE IMAGE
             if ($product->image && Storage::disk('public')->exists($product->image)) {
                 Storage::disk('public')->delete($product->image);
             }
 
-            // Delete product
+            // DELETE PRODUCT
             $product->delete();
 
             return response()->json([

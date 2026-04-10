@@ -15,14 +15,18 @@ class AuthController extends Controller
             $validated = $req->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:6'
+                'password' => 'required|min:6',
+                'role' => 'required|in:admin,vendor,customer'
             ], [
                 'name.required' => 'Name is required',
                 'email.required' => 'Email is required',
                 'password.required' => 'Password is required',
+                'role.required' => 'Role is required',
                 'email.unique' => 'User already exists with this email'
             ]);
 
+
+            $validated['password'] = Hash::make($validated['password']);
             $user = User::create($validated);
 
             return response()->json([
@@ -48,6 +52,11 @@ class AuthController extends Controller
 
     public function login(Request $req)
     {
+        $req->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
         $user = User::where('email', $req->email)->first();
 
         if (!$user || !Hash::check($req->password, $user->password)) {
@@ -57,7 +66,8 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $token = $user->createToken('token')->plainTextToken;
+        // token (role-based)
+        $token = $user->createToken($user->role . '-token')->plainTextToken;
 
         return response()->json([
             'status' => true,
@@ -69,38 +79,11 @@ class AuthController extends Controller
 
     public function logout(Request $req)
     {
-        try {
-            $user = $req->user();
+        $req->user()->currentAccessToken()->delete();
 
-            if (!$user) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'User not authenticated'
-                ], 401);
-            }
-
-            $token = $user->currentAccessToken();
-
-            if (!$token) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Token not found'
-                ], 401);
-            }
-
-            $token->delete();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Logout successfully'
-            ], 200);
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Something went wrong',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'status' => true,
+            'message' => 'Logout successfully'
+        ]);
     }
 }

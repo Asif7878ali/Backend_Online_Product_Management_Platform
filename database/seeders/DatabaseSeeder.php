@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,18 +11,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Single Test User (avoid duplicate)
-        User::firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => bcrypt('12345678'),
-            ]
-        );
-
-        // Run Product Seeder
+        // Run Seeder
         $this->call([
-            ProductSeeder::class,
+            UsersSeeder::class,  // User Seeder
+            ProductSeeder::class,  // Product Seeder
         ]);
     }
 }
