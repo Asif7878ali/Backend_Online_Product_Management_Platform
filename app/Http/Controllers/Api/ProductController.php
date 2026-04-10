@@ -18,7 +18,7 @@ class ProductController extends Controller
             
             $user = auth()->user();
 
-            $query = Product::with('category');
+            $query = Product::with(['category', 'user']);
 
             // ROLE BASED FILTER
             if ($user->isVendor()) {

@@ -10,6 +10,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 //User Logout Api
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+// Get Users Api
+Route::middleware('auth:sanctum')->get('/get/users', [AuthController::class, 'index']);
 
 // Get Products Api
 Route::middleware('auth:sanctum')->get('/get/products', [ProductController::class, 'index']);

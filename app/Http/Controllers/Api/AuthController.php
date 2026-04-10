@@ -9,6 +9,28 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+
+    public function index()
+    {
+        try {
+            $users = User::where('role', '!=', 'admin')
+                ->paginate(10);
+
+            return response()->json([
+                'status' => true,
+                'data' => $users->items(),
+                'totalPages' => $users->lastPage(),
+                'totalItems' => $users->total(),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function register(Request $req)
     {
         try {
