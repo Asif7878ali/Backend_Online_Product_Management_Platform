@@ -13,7 +13,7 @@ class UsersSeeder extends Seeder
     public function run(): void
     {
         User::firstOrCreate(
-            ['email' => 'aloasif31@gmail.com'],
+            ['email' => 'test123@gmail.com'],
             [
                 'name' => 'Test User',
                 'role' => 'admin',
@@ -33,7 +33,16 @@ class UsersSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'asif12bn@gmail.com'],
             [
-                'name' => 'Saifi Saab',
+                'name' => 'Alex Ross',
+                'role' => 'vendor',
+                'password' => bcrypt('Pass@123'),
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'aloasif31@gmail.com'],
+            [
+                'name' => 'Muskan Sheikh',
                 'role' => 'vendor',
                 'password' => bcrypt('Pass@123'),
             ]
@@ -43,6 +52,24 @@ class UsersSeeder extends Seeder
             ['email' => 'example234@gmail.com'],
             [
                 'name' => 'Zaid Aly',
+                'role' => 'customer',
+                'password' => bcrypt('Wasd@123'),
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'adil234@gmail.com'],
+            [
+                'name' => 'Adil Sheikh',
+                'role' => 'customer',
+                'password' => bcrypt('Wasd@123'),
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'hans234@gmail.com'],
+            [
+                'name' => 'Hans Raj',
                 'role' => 'customer',
                 'password' => bcrypt('Wasd@123'),
             ]

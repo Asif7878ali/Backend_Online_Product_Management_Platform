@@ -5,13 +5,23 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Order;
+use App\Mail\LowStockAlert;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
     public function store(Request $request)
     {
+        // Check if user is a customer
+        if (!auth()->user()->isCustomer()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Only customers can purchase products'
+            ], 403);
+        }
+
         // Validation
         $request->validate([
             'product_id' => 'required|exists:products,id',
@@ -33,7 +43,7 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Not enough stock'], 400);
             }
 
-            //  Create order
+            // Create order
             $order = Order::create([
                 'user_id' => auth()->id(),
                 'product_id' => $product->id,
@@ -42,16 +52,16 @@ class OrderController extends Controller
                 'total_price' => $product->price * $request->quantity,
             ]);
 
-            // Reduce stock safely
+            // Reduce stock
             $product->decrement('stock', $request->quantity);
 
             // Refresh product to get updated stock
             $product->refresh();
 
-            // Low stock check
+            // Low stock check & Mail trigger
             if ($product->stock <= $product->threshold) {
-                // agar job banaya hai tab use karo
-                // dispatch(new LowStockJob($product));
+                // Send mail to the vendor who owns the product
+                Mail::to($product->user->email)->send(new LowStockAlert($product));
             }
 
             DB::commit();
@@ -68,7 +78,7 @@ class OrderController extends Controller
                 'status' => false,
                 'message' => 'Something went wrong',
                 'error' => $e->getMessage()
-            ]);
+            ], 500);
         }
     }
 
