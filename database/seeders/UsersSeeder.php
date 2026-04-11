@@ -13,7 +13,7 @@ class UsersSeeder extends Seeder
     public function run(): void
     {
         User::firstOrCreate(
-            ['email' => 'test123@gmail.com'],
+            ['email' => 'aloasif31@gmail.com'],
             [
                 'name' => 'Test User',
                 'role' => 'admin',
@@ -40,7 +40,7 @@ class UsersSeeder extends Seeder
         );
 
         User::firstOrCreate(
-            ['email' => 'aloasif31@gmail.com'],
+            ['email' => 'asifali22join@gmail.com'],
             [
                 'name' => 'Muskan Sheikh',
                 'role' => 'vendor',
